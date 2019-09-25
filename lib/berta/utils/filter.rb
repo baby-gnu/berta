@@ -27,7 +27,11 @@ module Berta
       def run(vmhs)
         fvmhs = vmhs.select { |vmh| takes_resources?(vmh) }
         logger.debug "Filtered based on RESOURCE: #{(vmhs - fvmhs).map { |vmh| vmh.handle.id }}"
-        fvmhs = filter(fvmhs)
+
+        locked_vmhs = fvmhs.select { |vmh| is_locked?(vmh) }
+        logger.debug "Filtered based on LOCK: #{(fvmhs - locked_vmhs).map { |vmh| vmh.handle.id }}"
+
+        fvmhs = filter(locked_vmhs)
         logger.debug "VMS after filter : #{fvmhs.map { |vmh| vmh.handle.id }}"
         fvmhs
       end
@@ -80,6 +84,10 @@ module Berta
 
       def takes_resources?(vmh)
         !IGNORED_STATES.include?(vmh.handle.state_str)
+      end
+
+      def is_locked?(vmh)
+        vmh.handle['LOCK/LOCKED'] && vmh.handle['LOCK/LOCKED'] != '0'
       end
 
       def log_filter
